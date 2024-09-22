@@ -1,0 +1,15 @@
+{
+  "domain": "solplanet",
+  "name": "Solplanet",
+  "codeowners": [
+    "@zbigniewmotyka"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://www.home-assistant.io/integrations/solplanet",
+  "homekit": {},
+  "iot_class": "local_polling",
+  "requirements": ["aiohttp>=3.8.1"],
+  "ssdp": [],
+  "zeroconf": []
+}

@@ -5731,6 +5731,12 @@
       "config_flow": true,
       "iot_class": "local_polling"
     },
+    "solplanet": {
+      "name": "Solplanet",
+      "integration_type": "hub",
+      "config_flow": true,
+      "iot_class": "local_polling"
+    },
     "soma": {
       "name": "Soma Connect",
       "integration_type": "hub",
