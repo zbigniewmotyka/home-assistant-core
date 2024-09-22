@@ -577,6 +577,7 @@ FLOWS = {
         "solaredge",
         "solarlog",
         "solax",
+        "solplanet",
         "soma",
         "somfy_mylink",
         "sonarr",
