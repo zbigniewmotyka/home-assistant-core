@@ -113,7 +113,7 @@ class SolplanetClient:
         """Create instance of solplanet http client."""
         self.host = host
         self.port = 8484
-        self.hass = hass
+        self.session = async_get_clientsession(hass)
 
     def get_url(self, endpoint: str) -> str:
         """Get URL for specified endpoint."""
@@ -121,11 +121,8 @@ class SolplanetClient:
 
     async def get(self, endpoint: str):
         """Make get request to specified endpoint."""
-        session = async_get_clientsession(hass=self.hass)
-        response = await session.get(self.get_url(endpoint))
-        result = await response.json()
-        await session.close()
-        return result
+        response = await self.session.get(self.get_url(endpoint))
+        return await response.json()
 
 
 class SolplanetApi:
