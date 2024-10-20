@@ -73,7 +73,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: SolplanetConfigEntry) -
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Migrate old entry."""
-    _LOGGER.info(
+    _LOGGER.debug(
         "Migrating configuration from version %s.%s",
         config_entry.version,
         config_entry.minor_version,
@@ -92,7 +92,7 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
             config_entry, data=new_data, minor_version=1, version=1
         )
 
-    _LOGGER.info(
+    _LOGGER.debug(
         "Migration to configuration version %s.%s successful",
         config_entry.version,
         config_entry.minor_version,
