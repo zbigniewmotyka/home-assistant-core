@@ -9,7 +9,7 @@ import homeassistant.helpers.config_validation as cv
 import homeassistant.helpers.device_registry as dr
 
 from .client import SolplanetApi, SolplanetClient
-from .const import DOMAIN, MANUFACTURER
+from .const import CONF_INTERVAL, DOMAIN, MANUFACTURER
 from .coordinator import SolplanetInverterDataUpdateCoordinator
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
@@ -31,7 +31,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: SolplanetConfigEntry) ->
     client = SolplanetClient(entry.data[CONF_HOST], hass)
     api = SolplanetApi(client)
 
-    coordinator = SolplanetInverterDataUpdateCoordinator(hass, api)
+    coordinator = SolplanetInverterDataUpdateCoordinator(
+        hass, api, entry.data[CONF_INTERVAL]
+    )
     await coordinator.async_config_entry_first_refresh()
     hass.data[DOMAIN][entry.entry_id] = coordinator
 

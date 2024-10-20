@@ -2,3 +2,5 @@
 
 DOMAIN = "solplanet"
 MANUFACTURER = "Solplanet"
+
+CONF_INTERVAL = "interval"

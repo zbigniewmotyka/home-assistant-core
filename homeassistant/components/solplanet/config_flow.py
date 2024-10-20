@@ -13,13 +13,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
 from .client import SolplanetApi, SolplanetClient
-from .const import DOMAIN
+from .const import CONF_INTERVAL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): str,
+        vol.Required(CONF_INTERVAL, default=60): int,
     }
 )
 
