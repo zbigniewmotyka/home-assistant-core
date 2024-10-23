@@ -16,7 +16,9 @@ _LOGGER = logging.getLogger(__name__)
 class SolplanetInverterDataUpdateCoordinator(DataUpdateCoordinator):
     """Solplanet inverter coordinator."""
 
-    def __init__(self, hass: HomeAssistant, api: SolplanetApi) -> None:
+    def __init__(
+        self, hass: HomeAssistant, api: SolplanetApi, update_interval: int
+    ) -> None:
         """Create instance of solplanet coordinator."""
         self.__api = api
 
@@ -26,7 +28,7 @@ class SolplanetInverterDataUpdateCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=60),
+            update_interval=timedelta(seconds=update_interval),
         )
 
     async def _async_update_data(self):
@@ -42,14 +44,16 @@ class SolplanetInverterDataUpdateCoordinator(DataUpdateCoordinator):
             return {isns[i]: inverters_data[i] for i in range(len(isns))}
 
         except Exception as err:
-            _LOGGER.exception("Exception occurred during inverters data update")
+            _LOGGER.debug(err, stack_info=True, exc_info=True)
             raise UpdateFailed(f"Error fetching data from API: {err}") from err
 
 
 class SolplanetBatteryDataUpdateCoordinator(DataUpdateCoordinator):
     """Solplanet battery coordinator."""
 
-    def __init__(self, hass: HomeAssistant, api: SolplanetApi) -> None:
+    def __init__(
+        self, hass: HomeAssistant, api: SolplanetApi, update_interval: int
+    ) -> None:
         """Create instance of solplanet battery coordinator."""
         self.__api = api
 
@@ -59,7 +63,7 @@ class SolplanetBatteryDataUpdateCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=60),
+            update_interval=timedelta(seconds=update_interval),
         )
 
     async def _async_update_data(self):
@@ -75,5 +79,5 @@ class SolplanetBatteryDataUpdateCoordinator(DataUpdateCoordinator):
             return {isns[i]: battery_data[i] for i in range(len(isns))}
 
         except Exception as err:
-            _LOGGER.exception("Exception occurred during battery data update")
+            _LOGGER.debug(err, stack_info=True, exc_info=True)
             raise UpdateFailed(f"Error fetching data from API: {err}") from err
