@@ -1,55 +1,18 @@
 """Solplanet client for solplanet integration."""
 
-from dataclasses import asdict, dataclass
-from enum import Enum
-from json import dumps
+from dataclasses import dataclass
+from inspect import signature
 import logging
+from typing import Any
 
-import aiohttp
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 __author__ = "Zbigniew Motyka"
 __copyright__ = "Zbigniew Motyka"
 __license__ = "MIT"
 
 _LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class GetMeterDataResponse:
-    """Get meter data response model.
-
-    Attributes
-    ----------
-    flg : int
-        TBD ??
-    tim : str
-        Datetime in format YYYYMMDDHHMMSS
-    pac : int
-        AC real power [W]
-    itd : int
-        Input today
-    otd : int
-        Output today
-    iet : int
-        Input total
-    oet : int
-        Output total
-    mod : int
-        TBD ??
-    enb : int
-        TBD ??
-
-    """
-
-    flg: int
-    tim: str
-    pac: int
-    itd: int
-    otd: int
-    iet: int
-    oet: int
-    mod: int
-    enb: int
 
 
 @dataclass
@@ -97,24 +60,125 @@ class GetInverterDataResponse:
 
     """
 
-    flg: int
-    tim: str
-    tmp: int
-    fac: int
-    pac: int
-    sac: int
-    qac: int
-    eto: int
-    etd: int
-    hto: int
-    pf: int
-    wan: int
-    err: int
-    vac: list[int]
-    iac: list[int]
-    vpv: list[int]
-    ipv: list[int]
-    str: list[int]
+    flg: int | None = None
+    tim: str | None = None
+    tmp: int | None = None
+    fac: int | None = None
+    pac: int | None = None
+    sac: int | None = None
+    qac: int | None = None
+    eto: int | None = None
+    etd: int | None = None
+    hto: int | None = None
+    pf: int | None = None
+    wan: int | None = None
+    err: int | None = None
+    vac: list[int] | None = None
+    iac: list[int] | None = None
+    vpv: list[int] | None = None
+    ipv: list[int] | None = None
+    str: list[int] | None = None
+    stu: int | None = None
+    pac1: int | None = None
+    qac1: int | None = None
+    pac2: int | None = None
+    qac2: int | None = None
+    pac3: int | None = None
+    qac3: int | None = None
+
+
+@dataclass
+class GetInverterInfoItemResponse:
+    """Get inverter info item response."""
+
+    isn: str | None = None
+    add: int | None = None
+    safety: int | None = None
+    rate: int | None = None
+    msw: str | None = None
+    ssw: str | None = None
+    tsw: str | None = None
+    pac: int | None = None
+    etd: int | None = None
+    eto: int | None = None
+    err: int | None = None
+    cmv: str | None = None
+    mty: int | None = None
+    model: str | None = None
+
+    def isStorage(self) -> bool:
+        """Check if device supports battery."""
+        return self.mty in (11, 12, 13, 14, 15, 16, 17, 18, 19, 20) or (
+            self.isn is not None and self.isn.startswith("BE")
+        )
+
+
+@dataclass
+class GetInverterInfoResponse:
+    """Get inverter info response."""
+
+    inv: list[GetInverterInfoItemResponse]
+    num: int | None = None
+
+
+@dataclass
+class GetMeterDataResponse:
+    """Get meter data response model.
+
+    Attributes
+    ----------
+    flg : int
+        TBD ??
+    tim : str
+        Datetime in format YYYYMMDDHHMMSS
+    pac : int
+        AC real power [W]
+    itd : int
+        Input today
+    otd : int
+        Output today
+    iet : int
+        Input total
+    oet : int
+        Output total
+    mod : int
+        TBD ??
+    enb : int
+        TBD ??
+
+    """
+
+    flg: int | None = None
+    tim: str | None = None
+    pac: int | None = None
+    itd: int | None = None
+    otd: int | None = None
+    iet: int | None = None
+    oet: int | None = None
+    mod: int | None = None
+    enb: int | None = None
+
+
+@dataclass
+class GetMeterInfoResponse:
+    """Get meter info response."""
+
+    mod: int | None = None
+    enb: int | None = None
+    exp_m: int | None = None
+    regulate: int | None = None
+    enb_PF: int | None = None  # noqa: N815
+    target_PF: int | None = None  # noqa: N815
+    total_pac: int | None = None
+    total_fac: int | None = None
+    meter_pac: int | None = None
+    sn: str | None = None
+    manufactory: str | None = None
+    type: str | None = None
+    name: str | None = None
+    model: int | None = None
+    abs: int | None = None
+    offset: int | None = None
 
 
 @dataclass
@@ -128,9 +192,9 @@ class GetBatteryDataResponse:
     tim : str
         Datetime in format YYYYMMDDHHMMSS
     vb : int
-        Battery voltage [cV]
+        Battery voltage [V] (/100)
     cb : int
-        Battery current [dV]
+        Battery current [A] (/10)
     pb : int
         Power pattery [W]
     tb : int
@@ -142,129 +206,79 @@ class GetBatteryDataResponse:
 
     """
 
-    flg: int
-    tim: str
-    ppv: int
-    etdpv: int
-    etopv: int
-    cst: int
-    bst: int
-    eb1: int
-    wb1: int
-    vb: int
-    cb: int
-    pb: int
-    tb: int
-    soc: int
-    soh: int
-    cli: int
-    clo: int
-    ebi: int
-    ebo: int
-    eaci: int
-    eaco: int
-    vesp: int
-    cesp: int
-    fesp: int
-    pesp: int
-    rpesp: int
-    etdesp: int
-    etoesp: int
-    charge_ac_td: int
-    charge_ac_to: int
-
-
-@dataclass
-class GetMonitorInfoResponse:
-    """Get monitor info response."""
-
-    psn: str
-    key: str
-    typ: int
-    nam: str
-    mod: str
-    muf: str
-    brd: str
-    hw: str
-    sw: str
-    wsw: str
-    protocol: str
-    tim: str
-    drm: int
-    drm_q: int
-    ali_ip: str
-    ali_port: int
-    pdk: str
-    ser: str  # codespell:ignore ser
-    status: int
-
-
-@dataclass
-class GetInverterInfoItemResponse:
-    """Get inverter info item response."""
-
-    isn: str
-    add: int
-    safety: int
-    rate: int
-    msw: str
-    ssw: str
-    tsw: str
-    pac: int
-    etd: int
-    eto: int
-    err: int
-    cmv: str
-    mty: int
-    model: str
-
-
-@dataclass
-class GetInverterInfoResponse:
-    """Get inverter info response."""
-
-    inv: list[GetInverterInfoItemResponse]
-    num: int
-
-
-@dataclass
-class GetRegulateInfoResponse:
-    """Get regulate info response."""
-
-    mod: int
-    enb: int
-    exp_m: int
-    regulate: int
-    enb_PF: int  # noqa: N815
-    target_PF: int  # noqa: N815
-    total_pac: int
-    total_fac: int
-    meter_pac: int
+    flg: int | None = None
+    tim: str | None = None
+    ppv: int | None = None
+    etdpv: int | None = None
+    etopv: int | None = None
+    cst: int | None = None
+    bst: int | None = None
+    eb1: int = 65535
+    eb2: int = 65535
+    eb3: int = 65535
+    eb4: int = 65535
+    wb1: int = 65535
+    wb2: int = 65535
+    wb3: int = 65535
+    wb4: int = 65535
+    vb: int | None = None
+    cb: int | None = None
+    pb: int | None = None
+    tb: int | None = None
+    soc: int | None = None
+    soh: int | None = None
+    cli: int | None = None
+    clo: int | None = None
+    ebi: int | None = None
+    ebo: int | None = None
+    eaci: int | None = None
+    eaco: int | None = None
+    vesp: int | None = None
+    cesp: int | None = None
+    fesp: int | None = None
+    pesp: int | None = None
+    rpesp: int | None = None
+    etdesp: int | None = None
+    etoesp: int | None = None
+    charge_ac_td: int | None = None
+    charge_ac_to: int | None = None
+    vl1esp: int | None = None
+    il1esp: int | None = None
+    pac1esp: int | None = None
+    qac1esp: int | None = None
+    vl2esp: int | None = None
+    il2esp: int | None = None
+    pac2esp: int | None = None
+    qac2esp: int | None = None
+    vl3esp: int | None = None
+    il3esp: int | None = None
+    pac3esp: int | None = None
+    qac3esp: int | None = None
 
 
 @dataclass
 class GetBatteryInfoItemResponse:
     """Get battery info item response."""
 
-    bid: int
-    devtype: str
-    manufactoty: str
-    partno: str
-    model1sn: str
-    model2sn: str
-    model3sn: str
-    model4sn: str
-    model5sn: str
-    model6sn: str
-    model7sn: str
-    model8sn: str
-    modeltotal: int
-    monomertotoal: int
-    monomerinmodel: int
-    ratedvoltage: int
-    capacity: int
-    hardwarever: str
-    softwarever: str
+    bid: int | None = None
+    devtype: str | None = None
+    manufactoty: str | None = None
+    partno: str | None = None
+    model1sn: str | None = None
+    model2sn: str | None = None
+    model3sn: str | None = None
+    model4sn: str | None = None
+    model5sn: str | None = None
+    model6sn: str | None = None
+    model7sn: str | None = None
+    model8sn: str | None = None
+    modeltotal: int | None = None
+    monomertotoal: int | None = None
+    monomerinmodel: int | None = None
+    ratedvoltage: int | None = None
+    capacity: int | None = None
+    hardwarever: str | None = None
+    softwarever: str | None = None
 
 
 @dataclass
@@ -280,67 +294,18 @@ class GetBatteryInfoResponse:
 
     """
 
-    isn: str
-    stu_r: int
-    type: int
-    mod_r: int
-    muf: int
-    mod: int
-    num: int
-    fir_r: int
-    charging: int
-    charge_max: int
-    discharge_max: int
-    battery: GetBatteryInfoItemResponse
-
-
-@dataclass
-class GetWifiListItemResponse:
-    """Get Wifi list item response."""
-
-    sid: str
-    srh: str
-    channel: str
-
-
-@dataclass
-class GetWifiListResponse:
-    """Get Wifi list response."""
-
-    wif: list[GetWifiListItemResponse]
-    num: str
-
-
-@dataclass
-class GetWlanStaInfoResponse:
-    """Get wlan sta info response."""
-
-    mode: str
-    sid: str
-    srh: int
-    ip: str
-    gtw: str
-    msk: str
-
-
-@dataclass
-class GetWlanApInfoResponse:
-    """Get wlan ap info response."""
-
-    mode: str
-    sid: str
-    psw: str
-    ip: str
-
-
-class BatteryMode(Enum):
-    """Battery mode."""
-
-    OwnNeeds = 1
-    Backup = 2
-    Advanced = 3
-    OffGrid = 4
-    Charging = 5
+    battery: GetBatteryInfoItemResponse | None = None
+    isn: str | None = None
+    stu_r: int | None = None
+    type: int | None = None
+    mod_r: int | None = None
+    muf: int | None = None
+    mod: int | None = None
+    num: int | None = None
+    fir_r: int | None = None
+    charging: int | None = None
+    charge_max: int | None = None
+    discharge_max: int | None = None
 
 
 @dataclass
@@ -349,12 +314,12 @@ class SetBatteryConfigValueRequest:
 
     type: int
     mod_r: int
-    sn: str
-    discharge_max: int
-    charge_max: int
-    muf: int
-    mod: int
-    num: int
+    sn: str | None
+    discharge_max: int | None
+    charge_max: int | None
+    muf: int | None
+    mod: int | None
+    num: int | None
 
 
 @dataclass
@@ -367,22 +332,62 @@ class SetBatteryConfigRequest:
 
 
 @dataclass
-class GetWlanInfoResponse:
-    """Get wlan info response."""
+class BatteryWorkMode:
+    """Represent data for battery work mode."""
 
-    mode: str
-    ip: str
-    gtw: str
-    msk: str
+    name: str
+
+    mod_r: int
+    type: int
+
+
+class BatteryWorkModes:
+    """Helper to for BatteryWorkMode."""
+
+    _battery_modes: list[BatteryWorkMode] = [
+        BatteryWorkMode("Self-consumption mode", 2, 1),
+        BatteryWorkMode("Reserve power mode", 3, 1),
+        BatteryWorkMode("Custom mode", 4, 1),
+        BatteryWorkMode("Off-grid mode", 1, 2),
+        BatteryWorkMode("Time of use mode", 5, 1),
+    ]
+
+    def get_all_modes(self, type: int, mod_r: int) -> list[BatteryWorkMode]:
+        """Get all possible battery work modes."""
+        selected = next(
+            (x for x in self._battery_modes if x.mod_r == mod_r and x.type == type),
+            None,
+        )
+        result = []
+        result.extend(self._battery_modes)
+
+        if selected is None:
+            result.append(
+                BatteryWorkMode(f"Unknown (mod_r: {mod_r}, type: {type})", mod_r, type)
+            )
+
+        return result
+
+    def get_mode(self, type: int, mod_r: int) -> BatteryWorkMode | None:
+        """Get battery work mode by type and mod_r."""
+        return next(
+            (
+                x
+                for x in self.get_all_modes(type, mod_r)
+                if x.type == type and x.mod_r == mod_r
+            ),
+            None,
+        )
 
 
 class SolplanetClient:
     """Solplanet http client."""
 
-    def __init__(self, host: str) -> None:
+    def __init__(self, host: str, hass: HomeAssistant) -> None:
         """Create instance of solplanet http client."""
         self.host = host
         self.port = 8484
+        self.session = async_get_clientsession(hass)
 
     def get_url(self, endpoint: str) -> str:
         """Get URL for specified endpoint."""
@@ -390,11 +395,13 @@ class SolplanetClient:
 
     async def get(self, endpoint: str):
         """Make get request to specified endpoint."""
-        session = aiohttp.ClientSession()
-        response = await session.get(self.get_url(endpoint))
-        result = await response.json()
-        await session.close()
-        return result
+        response = await self.session.get(self.get_url(endpoint))
+        return await response.json(content_type=None)
+
+    async def post(self, endpoint: str, data: Any):
+        """Make get request to specified endpoint."""
+        response = await self.session.post(self.get_url(endpoint), json=data)
+        return await response.json(content_type=None)
 
 
 class SolplanetApi:
@@ -405,121 +412,65 @@ class SolplanetApi:
         _LOGGER.debug("Creating api instance")
         self.client = client
 
-    async def get_meter_data(self) -> GetMeterDataResponse:
-        """Get meter data."""
-        _LOGGER.debug("Getting meter data")
-        response = await self.client.get("getdevdata.cgi?device=3")
-        return GetMeterDataResponse(**response)
-
     async def get_inverter_data(self, sn: str) -> GetInverterDataResponse:
         """Get inverter data."""
         _LOGGER.debug("Getting inverter (%s) data", sn)
         response = await self.client.get("getdevdata.cgi?device=2&sn=" + sn)
-        return GetInverterDataResponse(**response)
-
-    async def get_battery_data(self, sn: str) -> GetBatteryDataResponse:
-        """Get battery data."""
-        _LOGGER.debug("Getting battery (%s) data", sn)
-        response = await self.client.get("getdevdata.cgi?device=4&sn=" + sn)
-        return GetBatteryDataResponse(**response)
-
-    async def get_monitor_info(self) -> GetMonitorInfoResponse:
-        """Get monitor info."""
-        _LOGGER.debug("Getting monitor info")
-        response = await self.client.get("getdev.cgi")
-        return GetMonitorInfoResponse(**response)
+        return self._create_class_from_dict(GetInverterDataResponse, response)
 
     async def get_inverter_info(self) -> GetInverterInfoResponse:
         """Get inverter info."""
         _LOGGER.debug("Getting inverter info")
         response = await self.client.get("getdev.cgi?device=2")
         response["inv"] = [
-            GetInverterInfoItemResponse(**item) for item in response["inv"]
+            self._create_class_from_dict(GetInverterInfoItemResponse, item)
+            for item in response["inv"]
         ]
-        return GetInverterInfoResponse(**response)
+        return self._create_class_from_dict(GetInverterInfoResponse, response)
 
-    async def get_regulate_info(self) -> GetRegulateInfoResponse:
-        """Get regulate info."""
-        _LOGGER.debug("Getting regulate info")
+    async def get_meter_data(self) -> GetMeterDataResponse:
+        """Get meter data."""
+        _LOGGER.debug("Getting meter data")
+        response = await self.client.get("getdevdata.cgi?device=3")
+        return self._create_class_from_dict(GetMeterDataResponse, response)
+
+    async def get_meter_info(self) -> GetMeterInfoResponse:
+        """Get meter info."""
+        _LOGGER.debug("Getting meter info")
         response = await self.client.get("getdev.cgi?device=3")
-        return GetRegulateInfoResponse(**response)
+        return self._create_class_from_dict(GetMeterInfoResponse, response)
 
-    async def get_battery_info(self) -> GetBatteryInfoResponse:
+    async def get_battery_data(self, sn: str) -> GetBatteryDataResponse:
+        """Get battery data."""
+        _LOGGER.debug("Getting battery data")
+        response = await self.client.get("getdevdata.cgi?device=4&sn=" + sn)
+        return self._create_class_from_dict(GetBatteryDataResponse, response)
+
+    async def get_battery_info(self, sn: str) -> GetBatteryInfoResponse:
         """Get battery info."""
         _LOGGER.debug("Getting battery info")
-        response = await self.client.get("getdev.cgi?device=4")
-        response["battery"] = GetBatteryInfoItemResponse(**response["battery"])
-        return GetBatteryInfoResponse(**response)
+        response = await self.client.get("getdev.cgi?device=4&sn=" + sn)
+        if "battery" in response:
+            response["battery"] = self._create_class_from_dict(
+                GetBatteryInfoItemResponse, response["battery"]
+            )
+        return self._create_class_from_dict(GetBatteryInfoResponse, response)
 
-    async def get_wifi_list(self) -> GetWifiListResponse:
-        """Get available wifi networks list."""
-        _LOGGER.debug("Getting wifi list")
-        response = await self.client.get("wlanget.cgi?info=4")
-        response["wif"] = [GetWifiListItemResponse(**item) for item in response["wif"]]
-        return GetWifiListResponse(**response)
-
-    async def get_wlan_sta_info(self) -> GetWlanStaInfoResponse:
-        """Get WLAN STA info."""
-        _LOGGER.debug("Getting sta info")
-        response = await self.client.get("wlanget.cgi?info=2")
-        return GetWlanStaInfoResponse(**response)
-
-    async def get_wlan_ap_info(self) -> GetWlanApInfoResponse:
-        """Get WLAN AP info."""
-        _LOGGER.debug("Getting ap info")
-        response = await self.client.get("wlanget.cgi?info=1")
-        return GetWlanApInfoResponse(**response)
-
-    async def get_wlan_info(self) -> GetWlanInfoResponse:
-        """Get wlan info."""
-        _LOGGER.debug("Getting wlan info")
-        response = await self.client.get("wlanget.cgi?info=3")
-        return GetWlanInfoResponse(**response)
-
-    async def set_battery_config(self, request: SetBatteryConfigRequest) -> None:
-        """Set battery config."""
-        _LOGGER.debug("Set battery config: %s", dumps(asdict(request)))
-
-    async def change_battery_mode(self, mode: BatteryMode) -> None:
-        """Change battery mode."""
-        current = await self.get_battery_info()
+    async def set_battery_work_mode(self, sn: str, mode: BatteryWorkMode) -> None:
+        """Set battery work mode."""
+        current_config = await self.get_battery_info(sn)
         value = SetBatteryConfigValueRequest(
-            type=current.type,
-            mod_r=current.mod_r,
-            muf=current.muf,
-            mod=current.mod,
-            num=current.num,
-            sn=current.isn,
-            charge_max=current.charge_max,
-            discharge_max=current.discharge_max,
+            type=mode.type,
+            mod_r=mode.mod_r,
+            muf=current_config.muf,
+            mod=current_config.mod,
+            num=current_config.num,
+            sn=current_config.isn,
+            charge_max=current_config.charge_max,
+            discharge_max=current_config.discharge_max,
         )
-        self._fill_set_battery_config_value_request(value, mode)
         request = SetBatteryConfigRequest(value=value)
-        await self.set_battery_config(request)
+        await self.client.post("setting.cgi", request)
 
-    def _fill_set_battery_config_value_request(
-        self, battery_value: SetBatteryConfigValueRequest, mode: BatteryMode
-    ) -> SetBatteryConfigValueRequest:
-        if mode == BatteryMode.OwnNeeds:
-            battery_value.mod_r = 2
-            battery_value.type = 1
-        elif mode == BatteryMode.Backup:
-            battery_value.mod_r = 3
-            battery_value.type = 1
-        elif mode == BatteryMode.Advanced:
-            battery_value.mod_r = 4
-            battery_value.type = 1
-        elif mode == BatteryMode.OffGrid:
-            battery_value.mod_r = 1
-            battery_value.type = 2
-        elif mode == BatteryMode.Charging:
-            battery_value.mod_r = 1
-            battery_value.type = 4
-        else:
-            raise UnknownBatteryMode
-
-        return battery_value
-
-
-class UnknownBatteryMode(Exception):
-    """Error to indicate that battery mode in unknown."""
+    def _create_class_from_dict(self, cls, dict):
+        return cls(**{k: v for k, v in dict.items() if k in signature(cls).parameters})
