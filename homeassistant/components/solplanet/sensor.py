@@ -57,7 +57,7 @@ class SolplanetSensorEntityDescription(
     """Describe Solplanet sensor entity."""
 
 
-class SolplanetSensor(SolplanetEntity[float | int | str], SensorEntity):
+class SolplanetSensor(SolplanetEntity, SensorEntity):
     """Representation of a Solplanet sensor."""
 
     entity_description: SolplanetSensorEntityDescription

@@ -4,7 +4,7 @@ from collections import abc
 from dataclasses import dataclass
 import logging
 import re
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -31,10 +31,7 @@ class SolplanetEntityDescription(EntityDescription):
     unique_id_suffix: str | None = None
 
 
-T = TypeVar("T")
-
-
-class SolplanetEntity(CoordinatorEntity, Entity, Generic[T]):
+class SolplanetEntity(CoordinatorEntity, Entity):
     """Representation of a Solplanet sensor."""
 
     entity_description: SolplanetEntityDescription
@@ -86,7 +83,7 @@ class SolplanetEntity(CoordinatorEntity, Entity, Generic[T]):
                 "Component serial number not in data - this is normal if the inverter is sleeping"
             )
 
-    def _get_value_from_coordinator(self) -> T | None:
+    def _get_value_from_coordinator(self) -> float | int | str | None:
         """Return the state of the sensor."""
         try:
             data = self.coordinator.data[

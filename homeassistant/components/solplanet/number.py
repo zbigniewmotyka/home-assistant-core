@@ -27,7 +27,7 @@ class SolplanetNumberEntityDescription(
     callback: abc.Callable[[float], Any]
 
 
-class SolplanetNumber(SolplanetEntity[float], NumberEntity):
+class SolplanetNumber(SolplanetEntity, NumberEntity):
     """Representation of a Solplanet number."""
 
     entity_description: SolplanetNumberEntityDescription
