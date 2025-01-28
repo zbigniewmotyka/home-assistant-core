@@ -1,9 +1,13 @@
 """Solplanet client for solplanet integration."""
 
+import base64
 from dataclasses import dataclass
 from inspect import signature
+import json
 import logging
 from typing import Any
+
+from aiohttp import ClientResponse
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -294,11 +298,11 @@ class GetBatteryInfoResponse:
 
     """
 
+    type: int
+    mod_r: int
     battery: GetBatteryInfoItemResponse | None = None
     isn: str | None = None
     stu_r: int | None = None
-    type: int | None = None
-    mod_r: int | None = None
     muf: int | None = None
     mod: int | None = None
     num: int | None = None
@@ -395,13 +399,28 @@ class SolplanetClient:
 
     async def get(self, endpoint: str):
         """Make get request to specified endpoint."""
-        response = await self.session.get(self.get_url(endpoint))
-        return await response.json(content_type=None)
+        return await self._parse_response(
+            await self.session.get(self.get_url(endpoint))
+        )
 
     async def post(self, endpoint: str, data: Any):
         """Make get request to specified endpoint."""
-        response = await self.session.post(self.get_url(endpoint), json=data)
-        return await response.json(content_type=None)
+        return await self._parse_response(
+            await self.session.post(self.get_url(endpoint), json=data)
+        )
+
+    async def _parse_response(self, response: ClientResponse):
+        """Parse response from inverter endpoints."""
+        content = await response.read()
+        _LOGGER.debug(
+            "Received from %s:\nheaders: %s,\ncontent: %s",
+            response.request_info.url,
+            response.raw_headers,
+            base64.b64encode(content),
+        )
+        return json.loads(
+            s=content.strip().decode(response.get_encoding(), "replace"), strict=False
+        )
 
 
 class SolplanetApi:
@@ -467,6 +486,38 @@ class SolplanetApi:
             num=current_config.num,
             sn=current_config.isn,
             charge_max=current_config.charge_max,
+            discharge_max=current_config.discharge_max,
+        )
+        request = SetBatteryConfigRequest(value=value)
+        await self.client.post("setting.cgi", request)
+
+    async def set_battery_soc_min(self, sn: str, soc_min: int) -> None:
+        """Set battery work mode."""
+        current_config = await self.get_battery_info(sn)
+        value = SetBatteryConfigValueRequest(
+            type=current_config.type,
+            mod_r=current_config.mod_r,
+            muf=current_config.muf,
+            mod=current_config.mod,
+            num=current_config.num,
+            sn=current_config.isn,
+            charge_max=current_config.charge_max,
+            discharge_max=soc_min,
+        )
+        request = SetBatteryConfigRequest(value=value)
+        await self.client.post("setting.cgi", request)
+
+    async def set_battery_soc_max(self, sn: str, soc_max: int) -> None:
+        """Set battery work mode."""
+        current_config = await self.get_battery_info(sn)
+        value = SetBatteryConfigValueRequest(
+            type=current_config.type,
+            mod_r=current_config.mod_r,
+            muf=current_config.muf,
+            mod=current_config.mod,
+            num=current_config.num,
+            sn=current_config.isn,
+            charge_max=soc_max,
             discharge_max=current_config.discharge_max,
         )
         request = SetBatteryConfigRequest(value=value)
